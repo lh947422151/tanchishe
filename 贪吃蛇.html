@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style type="text/css">
+   canvas {
+            display: block;
+            margin: 10px auto;
+            border: 2px dashed red;
+            background:rgb(60, 60, 136) ;
+        }
+</style>
+
+<body>
+        <audio autoplay controls>
+				<source src="1.ogg" type="audio/ogg; codecs=vorbis">
+				  <source src="1.mp3" type="audio/mpeg">
+				  An audio clip from Johann Sebastian Bach.
+			  </audio>
+        <div style="text-align:center;margin-bottom:20px">
+        <h2>贪吃蛇游戏</h2></div>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <br>
+    <div style="text-align:center;margin-bottom:20px">
+    <input type="button" value="暂停" id="stopOrPlay" onclick="playOrStop()" />
+    <input type="button" value="开始游戏" onclick="javascript:start();" id="newGameButton" />&nbsp;&nbsp;
+    </div>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script type="text/javascript">
+        var canvas = document.getElementById("canvas");
+        var lh = canvas.getContext("2d");
+        var score = 0;
+        var flag = true;
+        var Block = function(col, row, size) {
+            this.col = col;
+            this.row = row;
+            this.size = size;
+            this.color = ["red", "green", "yellow", "fuchsia", "cyan",
+                "chartreuse", "darkgreen", "greenyellow"
+            ];
+        }
+
+        // 为蛇身的块定义draw方法
+        Block.prototype.draw = function() {
+            color = ranReverseArray(this.color);
+            var startPoint = 0;
+            for (var i = 0; i < color.length; i++) {
+                lh.fillStyle = color[i];
+                lh.beginPath();
+                lh.moveTo(this.col * this.size + this.size / 2, this.row * this.size + this.size / 2);
+                lh.arc(this.col * this.size + this.size / 2, this.row * this.size + this.size / 2,
+                    this.size / 2, startPoint, startPoint + Math.PI / 4, false);
+                lh.fill();
+                startPoint += Math.PI / 4;
+            }
+            //彩色蛇身
+            function ranReverseArray(oldArray) {
+                var newArray = [];
+                var len = oldArray.length;
+                var ranNumber, flag;
+                for (let i = 0; i < oldArray.length; i++) {
+                    while (true) {
+                        ranNumber = Math.floor(Math.random() * len);
+                        flag = true;
+                        for (let j = 0; j < i; j++) {
+                            if (newArray[j] == oldArray[ranNumber]) {
+                                flag = false;
+                                break;
+                            }
+                        }
+                        if (flag) break;
+                    }
+                    newArray[i] = oldArray[ranNumber];
+                }
+                return newArray;
+            }
+        }
+
+        var snake = {
+            body: [
+                new Block(23, 20, 10), new Block(22, 20, 10), new Block(21, 20, 10), new Block(20, 20, 10)
+            ],
+            direction: "up"
+        };
+        snake.draw = function() {
+            for (var i = 0; i < this.body.length; i++) {
+                this.body[i].draw();
+            }
+        };
+        snake.move = function() {
+            var head = this.body[0];
+            if (snake.direction == "right") {
+                var newHead = new Block(head.col + 1, head.row, head.size);
+            }
+            if (snake.direction == "left") {
+                var newHead = new Block(head.col - 1, head.row, head.size);
+            }
+            if (snake.direction == "up") {
+                var newHead = new Block(head.col, head.row - 1, head.size);
+            }
+            if (snake.direction == "down") {
+                var newHead = new Block(head.col, head.row + 1, head.size);
+            }
+            //判断是否碰壁
+            if (newHead.col < 0 || newHead.col > 79) {
+
+                gameover();
+            }
+            if (newHead.row < 0 || newHead.row > 59) {
+
+                gameover();
+            }
+            snake.body.unshift(newHead);
+            if (newHead.col == apple.posX && newHead.row == apple.posY) {
+                //如果吃到苹果了
+                score = score + 5   ;
+                while (true) { //保证新苹果不在蛇身上
+                    var checkApple = false;
+                    apple.posX = Math.floor(Math.random() * 80);
+                    apple.posY = Math.floor(Math.random() * 60);
+                    for (var i = 0; i < this.body.length; i++) {
+                        if (this.body[i].col == apple.posX && this.body[i].row == apple.posY) {
+                            checkApple = true;
+                        }
+                    }
+                    if (!checkApple) break;
+                }
+            } else {
+                snake.body.pop();
+            }
+            if (newHead.col == this.body[this.body.length - 1].x &&
+                newHead.row == this.body[this.body.length - 1].y) {
+                gameover();
+            }
+        }
+       //定义画布游戏结束；
+        function gameover() {
+            clearInterval(interval);
+            lh.font = "60px Comic Sans Ms";
+            lh.fillStyle = "Orange";
+            lh.shadowBlue = 5;
+            lh.shadowOffsetX = 5;
+            lh.shadowOffsetY = 5;
+            lh.shadowColor = "red";
+            lh.textAlign = "center";
+            lh.textBaseline = "middle";
+            lh.fillText("游戏结束！", 420, 280);
+
+        }
+
+        var apple = {
+            posX: Math.floor(Math.random() * 80),
+            posY: Math.floor(Math.random() * 60),
+            sizeR: 5
+        }
+        apple.draw = function() {
+            lh.fillStyle = "red";
+            lh.beginPath();
+            lh.arc((this.posX * 2 + 1) * this.sizeR, (this.posY * 2 + 1) * this.sizeR, this.sizeR, 0, 360, false);
+            lh.fill();
+        }
+
+        $("body").keydown(function(event) {
+            if (event.keyCode == 37 && snake.direction != "right") {
+                snake.direction = "left";
+            }
+            if (event.keyCode == 38 && snake.direction != "down") {
+                snake.direction = "up";
+            }
+            if (event.keyCode == 39 && snake.direction != "left") {
+                snake.direction = "right";
+            }
+            if (event.keyCode == 40 && snake.direction != "up") {
+                snake.direction = "down";
+            }
+        });
+        var culTime = 0;
+
+        function beginGame() {
+            lh.clearRect(0, 0, 800, 600);
+            culTime++; //统计次数
+            if (culTime == 5) {
+                gameTime.second++;
+                culTime = 0;
+                gameTime.show();
+            }
+
+             score1();//调用分数的方法
+            gameTime.draw();//画计时
+            snake.draw();
+            snake.move();
+            apple.draw();
+            lh.strokeRect(0, 0, 800, 600);
+
+        }
+
+         //负责启动游戏的函数
+         function start(){
+            if(flag){
+                 interval = setInterval(beginGame, 200);
+                 flag = false;
+            }
+        }
+        //以下代码设置游戏的“暂停”和“开始”
+        var stop = true;
+
+        function playOrStop() {
+            if (stop) {
+                clearInterval(interval);
+                $("#stopOrPlay").attr("value", "开始");
+                stop = false;
+            } else {
+                interval = setInterval(beginGame, 200);
+                $("#stopOrPlay").attr("value", "暂停");
+                stop = true;
+            }
+        }
+        //以下代码是用来计时的
+        var MyTime = function(hour, minute, second) {
+            this.hour = hour;
+            this.minute = minute;
+            this.second = second;
+            this.myTime = "";
+            this.show = function() {
+                if (this.second == 60) {
+                    this.second = 0;
+                    this.minute = this.minute + 1;
+                }
+                if (this.minute == 60) {
+                    this.minute = 0;
+                    this.hour = this.hour + 1;
+                }
+                this.myTime = "";
+                if (this.hour < 10) {
+                    this.myTime = this.myTime + "0" + this.hour + ":";
+                } else {
+                    this.myTime = this.myTime + this.hour + ":";
+                }
+                if (this.minute < 10) {
+                    this.myTime = this.myTime + "0" + this.minute + ":";
+                } else {
+                    this.myTime = this.myTime + this.minute + ":";
+                }
+                if (this.second < 10) {
+                    this.myTime = this.myTime + "0" + this.second;
+                } else {
+                    this.myTime = this.myTime + this.second + "";
+                }
+            };
+            this.draw = function() {
+                lh.textBaseline = "top";
+                lh.textAlign = "right";
+                lh.font = "20px Arial";
+                lh.fillText("计算时间：" + this.myTime,700, 10);
+            }
+        }
+        var gameTime = new MyTime(0, 0, 0);
+        function score1(){
+            lh.fillStyle = "pink";
+            lh.textBaseline = "top";
+            lh.textAlign = "left";
+            lh.font = "20px Arial";
+            lh.fillText("分数：" + score, 10, 10);
+        }
+    </script>
+</body>
+
+</html>
